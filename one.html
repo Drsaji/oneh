@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Wash POS System</title>
+    <style>
+        /* Same styles as before */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Car Wash POS System</h2>
+
+        <!-- Form Fields for Customer Details -->
+        <div class="form-group">
+            <label for="customer">Customer Name:</label>
+            <input type="text" id="customer" placeholder="Enter customer name">
+        </div>
+
+        <div class="form-group">
+            <label for="mobile">Customer Mobile Number:</label>
+            <input type="text" id="mobile" placeholder="Enter mobile number">
+        </div>
+
+        <!-- Service Selection -->
+        <div class="form-group services-checkbox">
+            <label><strong>Choose Services:</strong></label>
+            <div>
+                <input type="checkbox" id="basicWash" value="Basic Wash" data-price="20"> Basic Wash ($20)
+            </div>
+            <div>
+                <input type="checkbox" id="fullWash" value="Full Wash" data-price="40"> Full Wash ($40)
+            </div>
+            <div>
+                <input type="checkbox" id="interiorCleaning" value="Interior Cleaning" data-price="30"> Interior Cleaning ($30)
+            </div>
+            <div>
+                <input type="checkbox" id="waxing" value="Waxing" data-price="50"> Waxing ($50)
+            </div>
+            <div>
+                <input type="checkbox" id="tireCleaning" value="Tire Cleaning" data-price="25"> Tire Cleaning ($25)
+            </div>
+        </div>
+
+        <!-- Button to Generate Bill -->
+        <button class="btn" onclick="generateBill()">Generate Bill</button>
+
+        <!-- Bill Display Section -->
+        <div id="billSection" class="bill" style="display: none;">
+            <h3>Bill Summary</h3>
+            <p><strong>Customer:</strong> <span id="billCustomer"></span></p>
+            <p><strong>Mobile:</strong> <span id="billMobile"></span></p>
+            <p><strong>Services:</strong> <span id="billServices"></span></p>
+            <p><strong>Total Price:</strong> $<span id="billTotal"></span></p>
+            <button class="btn print-btn" onclick="printBill()">Print Bill</button>
+        </div>
+    </div>
+
+    <script>
+        const googleScriptUrl = 'https://script.google.com/macros/s/your-script-id/exec'; // Replace with your actual web app URL
+
+        function generateBill() {
+            // Get customer details
+            const customer = document.getElementById("customer").value;
+            const mobile = document.getElementById("mobile").value;
+
+            // Check if customer name and mobile are provided
+            if (!customer || !mobile) {
+                alert("Please enter customer name and mobile number.");
+                return;
+            }
+
+            // Get selected services and prices
+            let services = [];
+            let total = 0;
+            const checkboxes = document.querySelectorAll('.services-checkbox input[type="checkbox"]');
+            
+            checkboxes.forEach((checkbox) => {
+                if (checkbox.checked) {
+                    services.push(checkbox.value);
+                    total += parseFloat(checkbox.getAttribute("data-price"));
+                }
+            });
+
+            // If no service is selected
+            if (services.length === 0) {
+                alert("Please select at least one service.");
+                return;
+            }
+
+            // Display the bill details
+            document.getElementById("billCustomer").innerText = customer;
+            document.getElementById("billMobile").innerText = mobile;
+            document.getElementById("billServices").innerText = services.join(", ");
+            document.getElementById("billTotal").innerText = total;
+
+            // Send data to Google Sheets via the Apps Script web app
+            const billData = {
+                customerName: customer,
+                mobileNumber: mobile,
+                services: services,
+                totalPrice: total
+            };
+
+            // Send the data as a POST request to the Apps Script web app
+            fetch(googleScriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(billData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+
+            // Show the bill section
+            document.getElementById("billSection").style.display = "block";
+        }
+
+        // Print Bill
+        function printBill() {
+            const billContent = document.getElementById("billSection").innerHTML;
+            const originalContent = document.body.innerHTML;
+            
+            // Print only the bill section
+            document.body.innerHTML = billContent;
+            window.print();
+            
+            // Restore the original page content
+            document.body.innerHTML = originalContent;
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>
